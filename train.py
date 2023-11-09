@@ -16,7 +16,7 @@ if __name__ == "__main__":
     #   是否使用Cuda
     #   没有GPU可以设置成False
     # -------------------------------#
-    Cuda = True
+    Cuda = False
     # ---------------------------------------------------------------------#
     #   distributed     用于指定是否使用单机多卡分布式运行
     #                   终端指令仅支持Ubuntu。CUDA_VISIBLE_DEVICES用于在Ubuntu下指定显卡。
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------#
     #   输入图像大小，常用设置如[112, 112, 3]
     # --------------------------------------------------------#
-    input_shape = [160, 160, 3]
+    input_shape = [112, 112, 3]
     level1_classes, level2_classes_list, level3_classes_list = get_num_list(annotation_path)
     #level1_classes = 5  # 大类别的数量
     #level2_classes_list = [3, 3, 4, 3, 3]  # 不同大类别中的中类别数量列表
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     #   Epoch           模型总共训练的epoch
     # ------------------------------------------------------#
     # batch_size      = 48
-    batch_size = 8
+    batch_size = 16
     Init_Epoch = 0
     Epoch = 300
 
