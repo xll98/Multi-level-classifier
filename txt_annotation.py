@@ -27,7 +27,7 @@ def read_list_from_file_2d(filename):
     with open(filename, 'r', encoding='utf-8') as file:
         for line in file:
             sublist = line.strip().split(',')  # 使用逗号分隔每一行，得到子列表
-            lst.append(list(map(int, sublist)))  # 将子列表中的元素转换为整数并添加到新的列表中
+            lst.append(list(map(str, sublist)))  # 将子列表中的元素转换为整数并添加到新的列表中
     return lst
 
 
@@ -48,7 +48,7 @@ def read_list_from_file_3d(filename):
                 str_list = line.split(";")  # 先按分号分割字符串
                 for item in str_list:
                     if len(item)>1:
-                        num_list = [int(n) for n in item.split()]  # 再将每个子串转化为数字列表
+                        num_list = [str(n) for n in item.split()]  # 再将每个子串转化为数字列表
                         sublist2.append(num_list)
                 lst.append(sublist2)  # 将一级子列表添加到原始列表中
     return lst
