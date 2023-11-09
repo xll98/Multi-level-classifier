@@ -12,59 +12,67 @@ from utils.utils import show_config, get_num_list
 import numpy as np
 import torch
 
+def write_list_to_file_1d(lst, filename):
+    with open(filename, 'w', encoding='utf-8') as file:
+        for item in lst:
+            file.write(item + '\n')
+
+
+def read_list_from_file_1d(filename):
+    lst = []
+    with open(filename, 'r', encoding='utf-8') as file:
+        for line in file:
+            lst.append(line.strip())  # 使用strip()方法去除行末的换行符
+    return lst
+
+def write_list_to_file_2d(lst, filename):
+    with open(filename, 'w', encoding='utf-8') as file:
+        for sublist in lst:
+            file.write(','.join(map(str, sublist)) + '\n')  # 使用逗号分隔每个子列表的元素，并添加换行符
+
+
+def read_list_from_file_2d(filename):
+    lst = []
+    with open(filename, 'r', encoding='utf-8') as file:
+        for line in file:
+            sublist = line.strip().split(',')  # 使用逗号分隔每一行，得到子列表
+            lst.append(list(map(int, sublist)))  # 将子列表中的元素转换为整数并添加到新的列表中
+    return lst
+
+
+def write_list_to_file_3d(lst, filename):
+    with open(filename, 'w', encoding='utf-8') as file:
+        for sublist1 in lst:
+            for sublist2 in sublist1:
+                for item in sublist2:
+                    file.write(str(item) + ' ')  # 使用逗号分隔三级子列表元素
+                file.write(';')
+            file.write('\n')  # 换行分隔不同的一级子列表
+def read_list_from_file_3d(filename):
+    lst = []
+    with open(filename, 'r', encoding='utf-8') as file:
+        for line in file:
+            if len(line) > 1:
+                sublist2 = []
+                str_list = line.split(";")  # 先按分号分割字符串
+                for item in str_list:
+                    if len(item)>1:
+                        num_list = [int(n) for n in item.split()]  # 再将每个子串转化为数字列表
+                        sublist2.append(num_list)
+                lst.append(sublist2)  # 将一级子列表添加到原始列表中
+    return lst
+
 if __name__ == "__main__":
-    # -------------------------------------------------------#
-    #   指向根目录下的cls_train.txt，读取人脸路径与标签
-    # --------------------------------------------------------#
-    annotation_path = "cls_train.txt"
-    # annotation_path = "cls_train.txt.back"
-    # --------------------------------------------------------#
-    #   输入图像大小，常用设置如[112, 112, 3]
-    # --------------------------------------------------------#
-    # input_shape     = [80, 144, 3]
-    input_shape = [160, 160, 3]
-    batch_size = 27
-    # -------------------------------------------------------#
-    #   0.01用于验证，0.99用于训练
-    #   验证集的比例
-    # -------------------------------------------------------#
-    val_split = 0.15
-    with open(annotation_path, "r", encoding='utf-8') as f:
-        lines = f.readlines()
-    np.random.seed(10101)
-    np.random.shuffle(lines)
-    np.random.seed(None)
-    num_val = int(len(lines) * val_split)
-    num_train = len(lines) - num_val
+    # 示例列表
+    my_list3d = [ [[111,112], [121], [131,132], [141,142]], [[21], [22], [23]], [[311,312], [321,322,323]]]
+    my_list2d = [[11, 12, 13, 14], [21, 22, 23], [31, 32]]
+    # 将列表写入文件
+    #write_list_to_file_3d(my_list3d, 'my_file.txt')
+    write_list_to_file_2d(my_list2d, 'my_file2d.txt')
 
-    train_dataset = MMDataset(input_shape, lines[:num_train], random=True)
-    val_dataset = MMDataset(input_shape, lines[num_train:], random=False)
+    # 从文件中读取列表
+    #new_list = read_list_from_file_3d('my_file.txt')
+    new_list = read_list_from_file_2d('my_file2d.txt')
 
-    train_sampler = None
-    val_sampler = None
-    shuffle = True
-
-    gen = DataLoader(train_dataset, shuffle=shuffle, batch_size=batch_size, num_workers=1, pin_memory=True,
-                     drop_last=True, collate_fn=MMdataset_collate, sampler=train_sampler)
-    gen_val = DataLoader(val_dataset, shuffle=shuffle, batch_size=batch_size, num_workers=1, pin_memory=True,
-                         drop_last=True, collate_fn=MMdataset_collate, sampler=val_sampler)
-
-    count_nums = 0
-    count_batchs = 0
-    for iteration, batch in enumerate(gen):  # 遍历训练数据集
-        images, labels = batch  # 获取图像和标签
-        count_nums += 1
-        count_batchs += images.shape[0]
-        print("image shape", images.shape)
-        print("labels.shape", labels.shape)
-        labels_l1 = labels[:, 0].view(-1, 1)
-        labels_l2 = labels[:, 1]
-        labels_l3 = labels[:, 2]
-        print("labels_l1.shape", labels_l1.shape)
-        print("labels[0]", labels[0])
-        print("labels_l1[0]", labels_l1[0])
-        break
-    class_num1, class_num2, class_num3 = get_num_list(annotation_path)
-    print("num1",class_num1)
-    print("num2", class_num2)
-    print("num3", class_num3)
+    # 打印读取的列表
+    print(new_list)
