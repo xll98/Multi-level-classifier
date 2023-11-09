@@ -6,6 +6,8 @@ from torchsummary import summary
 
 from nets.mobilenet import MobileNetV1
 from nets.inception_resnet_v2 import InceptionResNetV2
+from utils.utils import get_num_list
+from torch.nn.utils.rnn import pad_sequence
 
 
 # from nets.mobilenet import MobileNetV1
@@ -85,7 +87,6 @@ class MultiLevelClassifier(nn.Module):
         self.last_bn = nn.BatchNorm1d(embedding_size, eps=0.001, momentum=0.1, affine=True)
         self.level1_classifier = nn.Sequential(
             nn.Linear(flat_shape, embedding_size, bias=False),
-            # nn.BatchNorm1d(embedding_size, eps=0.001, momentum=0.1, affine=True),
             nn.LayerNorm(embedding_size),
             nn.ReLU(),
             nn.Linear(embedding_size, level1_num_classes)
@@ -94,7 +95,6 @@ class MultiLevelClassifier(nn.Module):
         self.level2_classifier = nn.ModuleList([
             nn.Sequential(
                 nn.Linear(flat_shape, embedding_size, bias=False),
-                # nn.BatchNorm1d(embedding_size, eps=0.001, momentum=0.1, affine=True),
                 nn.LayerNorm(embedding_size),
                 nn.ReLU(),
                 nn.Linear(embedding_size, level2_classes)
@@ -113,7 +113,6 @@ class MultiLevelClassifier(nn.Module):
             level3_classifier = nn.ModuleList([
                 nn.Sequential(
                     nn.Linear(flat_shape, embedding_size, bias=False),
-                    # nn.BatchNorm1d(embedding_size, eps=0.001, momentum=0.1, affine=True),
                     nn.LayerNorm(embedding_size),
                     nn.ReLU(),
                     nn.Linear(embedding_size, level3_class)
@@ -161,33 +160,56 @@ class MultiLevelClassifier(nn.Module):
             level2_features.append(level2_feature)
             level3_features.append(level3_feature)
 
-        level1_features = torch.stack(level1_features)
-        level2_features = torch.stack(level2_features)
-        level3_features = torch.stack(level3_features)
+        level1_features = pad_sequence(level1_features, batch_first=True, padding_value=-1)
+        level2_features = pad_sequence(level2_features, batch_first=True, padding_value=-1)
+        level3_features = pad_sequence(level3_features, batch_first=True, padding_value=-1)
+
+        #level1_features = torch.stack(level1_features)
+        #level2_features = torch.stack(level2_features)
+        #level3_features = torch.stack(level3_features)
 
         return level1_features, level2_features, level3_features
 
 
 if __name__ == "__main__":
-    level1_classes = 5  # 大类别的数量
-    level2_classes_list = [3, 3, 4, 3, 3]  # 不同大类别中的中类别数量列表
-    level3_classes_list = [[2, 1, 1], [2, 2, 2], [1, 1, 1, 1], [1, 1, 1], [2, 2, 2]]  # 不同中类别中的小类别数量列表
+    # level1_classes = 5  # 大类别的数量
+    # level2_classes_list = [3, 3, 4, 3, 3]  # 不同大类别中的中类别数量列表
+    # level3_classes_list = [[2, 1, 1], [2, 2, 2], [1, 1, 1, 1], [1, 1, 1], [2, 2, 2]]  # 不同中类别中的小类别数量列表
 
     # level1_classes = 10  # 大类别的数量
     # level2_classes_list = [3, 3, 4, 3, 3, 3 ,3 ,3, 3, 3]  # 不同大类别中的中类别数量列表
     # level3_classes_list = [[2,1,1], [2,2,2], [1,1,1,1], [1,1,1], [2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2]]  # 不同中类别中的小类别数量列表
 
+    annotation_path = "../cls_train.txt"
+    # --------------------------------------------------------#
+    #   输入图像大小，常用设置如[112, 112, 3]
+    # --------------------------------------------------------#
+    input_shape = [112, 112, 3]
+    level1_classes, level2_classes_list, level3_classes_list = get_num_list(annotation_path)
+
+    print("level1_classes", level1_classes)
+    print("level2_classes_list", level2_classes_list)
+    print("level3_classes_list", level3_classes_list)
+
     net = MultiLevelClassifier(backbone="mobilenet", level1_num_classes=level1_classes,
                                level2_num_classes_list=level2_classes_list, level3_num_classes_list=level3_classes_list)
     net = net.cuda()
     net.eval()
-    a = torch.randn(32, 3, 128, 128)
+    a = torch.randn(4, 3, 112, 112)
     out1, out2, out3 = net(a.cuda())
 
-    summary(net, (3, 128, 128))
-    file_path = 'model_weights.pth'
+    list_of_tensors = [torch.tensor([1, 2, 3]), torch.tensor([4,5,6]), torch.tensor([5, 6, 7])]
+
+    # 使用torch.cat函数将这些tensor在第一维度连接起来，并使用 -1 填充
+    padded_tensors = pad_sequence(list_of_tensors, batch_first=True, padding_value=-1)
+    print("padded_tensors",padded_tensors)
+    stack_tesnor = torch.stack(list_of_tensors)
+    print("stack_tesnor",stack_tesnor)
+
+    # summary(net, (3, 112, 112))
+    # file_path = 'model_weights.pth'
 
     # 使用 torch.save 函数保存模型的权重
-    #torch.save(net.state_dict(), file_path)
+    # torch.save(net.state_dict(), file_path)
     print(out1, out2, out3)
-    # print(net)
+    #print(net)
