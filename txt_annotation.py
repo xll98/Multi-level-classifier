@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # datasets_path   = "datasets"
     # datasets_path = "/home/share/DeeplearningData/Paimian/img_whh/"
     # datasets_path = "/home/share/DeeplearningData/Paimian/SKU_DOWN/"
-    datasets_path = "G:/DeeplLearningPoject/PaimianClass/datasets/百事SKU"
+    datasets_path = "G:/DeeplLearningPoject/PaimianClass/datasets/SkuMWHH"
 
     l1_path = os.listdir(datasets_path)
     l1_names = sorted(l1_path)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     list_level2 = []
     list_level3 = []
 
-    list_file = open('./labels/cls_train.txt', 'w', encoding='utf-8')
+    list_file = open('labels/cls_train.txt', 'w', encoding='utf-8')
     for l1_cls_id, l1_type_name in enumerate(l1_names):
         l2_path = os.path.join(datasets_path, l1_type_name)
         if not os.path.isdir(l2_path):
@@ -105,8 +105,8 @@ if __name__ == "__main__":
         list_level2.append(tmp_list_l2)
         list_level3.append(tmp_list_l3_2)
 
-    write_list_to_file_1d(list_level1,"./labels/l1_class_name.txt")
-    write_list_to_file_2d(list_level2, "./labels/l2_class_name.txt")
-    write_list_to_file_3d(list_level3, "./labels/l3_class_name.txt")
+    write_list_to_file_1d(list_level1, "labels/l1_class_name.txt")
+    write_list_to_file_2d(list_level2, "labels/l2_class_name.txt")
+    write_list_to_file_3d(list_level3, "labels/l3_class_name.txt")
     list_file.close()
     print("finished!")

@@ -36,7 +36,7 @@ def read_list_from_file_2d(filename):
     with open(filename, 'r', encoding='utf-8') as file:
         for line in file:
             sublist = line.strip().split(',')  # 使用逗号分隔每一行，得到子列表
-            lst.append(list(map(int, sublist)))  # 将子列表中的元素转换为整数并添加到新的列表中
+            lst.append(list(map(str, sublist)))  # 将子列表中的元素转换为整数并添加到新的列表中
     return lst
 
 
@@ -57,22 +57,40 @@ def read_list_from_file_3d(filename):
                 str_list = line.split(";")  # 先按分号分割字符串
                 for item in str_list:
                     if len(item)>1:
-                        num_list = [int(n) for n in item.split()]  # 再将每个子串转化为数字列表
+                        num_list = [str(n) for n in item.split()]  # 再将每个子串转化为数字列表
                         sublist2.append(num_list)
                 lst.append(sublist2)  # 将一级子列表添加到原始列表中
     return lst
+import os
+def rename_folders(path):
+    for foldername in os.listdir(path):
+        if os.path.isdir(os.path.join(path, foldername)):
+            new_name = foldername.rpartition(' -')[0]
+            os.rename(os.path.join(path, foldername), os.path.join(path, new_name))
 
 if __name__ == "__main__":
     # 示例列表
-    my_list3d = [ [[111,112], [121], [131,132], [141,142]], [[21], [22], [23]], [[311,312], [321,322,323]]]
-    my_list2d = [[11, 12, 13, 14], [21, 22, 23], [31, 32]]
+    #my_list3d = [ [[111,112], [121], [131,132], [141,142]], [[21], [22], [23]], [[311,312], [321,322,323]]]
+    #my_list2d = [[11, 12, 13, 14], [21, 22, 23], [31, 32]]
     # 将列表写入文件
     #write_list_to_file_3d(my_list3d, 'my_file.txt')
-    write_list_to_file_2d(my_list2d, 'my_file2d.txt')
+    #write_list_to_file_2d(my_list2d, 'my_file2d.txt')
 
     # 从文件中读取列表
     #new_list = read_list_from_file_3d('my_file.txt')
-    new_list = read_list_from_file_2d('my_file2d.txt')
+    l1_list = read_list_from_file_1d('labels_color/l1_class_name.txt')
+    l2_list = read_list_from_file_2d('labels_color/l2_class_name.txt')
+    l3_list = read_list_from_file_3d('labels_color/l3_class_name.txt')
 
     # 打印读取的列表
-    print(new_list)
+    #print("l1_list:",l1_list)
+    #print("l2_list:", l2_list)
+    #print("l3_list:", l3_list)
+
+    directory = "./datasets/多级分类"  # 替换为要遍历的目录路径
+
+    for root, dirs, files in os.walk(directory):
+        for dir in dirs:
+            if " " in dir:
+                new_dir = dir.replace(' - 副本', "")
+                os.rename(os.path.join(root, dir), os.path.join(root, new_dir))

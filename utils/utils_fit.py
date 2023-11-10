@@ -72,9 +72,6 @@ def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step
                 labels = labels.cuda(local_rank)
 
         optimizer.zero_grad()  # 梯度清零
-        #labels_l1 = labels[:, 0].view(-1, 1)
-        #labels_l2 = labels[:, 1].view(-1, 1)
-        #labels_l3 = labels[:, 2].view(-1, 1)
 
         labels_l1 = labels[:, 0]
         labels_l2 = labels[:, 1]
@@ -82,9 +79,30 @@ def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step
 
         if not fp16:
             cls_l1, cls_l2, cls_l3 = model_train(images)  # 前向传播
-            _ce_loss_l1 = nn.NLLLoss()(F.log_softmax(cls_l1, dim=-1), labels_l1)  # 计算交叉熵损失
-            _ce_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2, dim=-1), labels_l2)  # 计算交叉熵损失
-            _ce_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3, dim=-1), labels_l3)  # 计算交叉熵损失
+            _ce_loss_l1 = 0
+            _ce_loss_l2 = 0
+            _ce_loss_l3 = 0
+            for i in range(images.size(0)):  # 遍历每个样本
+                label_l1 = labels_l1[i].item()
+                label_l2 = labels_l2[i].item()
+                label_l3 = labels_l3[i].item()
+                pared_l1 = torch.argmax(F.softmax(cls_l1[i], dim=-1), dim=-1).item()
+                pared_l2 = torch.argmax(F.softmax(cls_l2[i], dim=-1), dim=-1).item()
+                tmp_loss_l1 = nn.NLLLoss()(F.log_softmax(cls_l1[i].unsqueeze(0), dim=-1), torch.tensor([label_l1]))
+                if pared_l1 == label_l1:  # 判断l1是否是正确的
+                    tmp_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2[i].unsqueeze(0), dim=-1), torch.tensor([label_l2]))
+                else:
+                    tmp_loss_l2 = tmp_loss_l1  # 超出范围时沿用_ce_loss_l1
+                if pared_l2 == label_l2:  # 判断是否超出范围
+                    tmp_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3[i].unsqueeze(0), dim=-1), torch.tensor([label_l3]))
+                else:
+                    tmp_loss_l3 = tmp_loss_l2  # 超出范围时沿用_ce_loss_l1
+                _ce_loss_l1 += tmp_loss_l1
+                _ce_loss_l2 += tmp_loss_l2
+                _ce_loss_l3 += tmp_loss_l3
+            _ce_loss_l1 = _ce_loss_l1 / images.size(0)
+            _ce_loss_l2 = _ce_loss_l2 / images.size(0)
+            _ce_loss_l3 = _ce_loss_l3 / images.size(0)
             _loss = (loss_l1_weight * _ce_loss_l1) + (loss_l2_weight * _ce_loss_l2) + (
                     loss_l3_weight * _ce_loss_l3)
             _loss.backward()  # 反向传播
@@ -93,9 +111,32 @@ def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step
             from torch.cuda.amp import autocast
             with autocast():
                 cls_l1, cls_l2, cls_l3 = model_train(images)  # 前向传播
-                _ce_loss_l1 = nn.NLLLoss()(F.log_softmax(cls_l1, dim=-1), labels_l1)  # 计算交叉熵损失l1
-                _ce_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2, dim=-1), labels_l2)  # 计算交叉熵损失l2
-                _ce_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3, dim=-1), labels_l3)  # 计算交叉熵损失l3
+                _ce_loss_l1 = 0
+                _ce_loss_l2 = 0
+                _ce_loss_l3 = 0
+                for i in range(images.size(0)):  # 遍历每个样本
+                    label_l1 = labels_l1[i].item()
+                    label_l2 = labels_l2[i].item()
+                    label_l3 = labels_l3[i].item()
+                    pared_l1 = torch.argmax(F.softmax(cls_l1[i], dim=-1), dim=-1).item()
+                    pared_l2 = torch.argmax(F.softmax(cls_l2[i], dim=-1), dim=-1).item()
+                    tmp_loss_l1 = nn.NLLLoss()(F.log_softmax(cls_l1[i].unsqueeze(0), dim=-1), torch.tensor([label_l1]))
+                    if pared_l1 == label_l1:  # 判断l1是否是正确的
+                        tmp_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2[i].unsqueeze(0), dim=-1),
+                                                   torch.tensor([label_l2]))
+                    else:
+                        tmp_loss_l2 = tmp_loss_l1  # 超出范围时沿用_ce_loss_l1
+                    if pared_l2 == label_l2:  # 判断是否超出范围
+                        tmp_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3[i].unsqueeze(0), dim=-1),
+                                                   torch.tensor([label_l3]))
+                    else:
+                        tmp_loss_l3 = tmp_loss_l2  # 超出范围时沿用_ce_loss_l1
+                    _ce_loss_l1 += tmp_loss_l1
+                    _ce_loss_l2 += tmp_loss_l2
+                    _ce_loss_l3 += tmp_loss_l3
+                _ce_loss_l1 = _ce_loss_l1 / images.size(0)
+                _ce_loss_l2 = _ce_loss_l2 / images.size(0)
+                _ce_loss_l3 = _ce_loss_l3 / images.size(0)
                 _loss = (loss_l1_weight * _ce_loss_l1) + (loss_l2_weight * _ce_loss_l2) + (
                         loss_l3_weight * _ce_loss_l3)  # 根据各层权重计算总loss
 
@@ -156,9 +197,30 @@ def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step
             labels_l2 = labels[:, 1]
             labels_l3 = labels[:, 2]
             cls_l1, cls_l2, cls_l3 = model_train(images)  # 前向传播
-            _ce_loss_l1 = nn.NLLLoss()(F.log_softmax(cls_l1, dim=-1), labels_l1)  # 计算交叉熵损失
-            _ce_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2, dim=-1), labels_l2)  # 计算交叉熵损失
-            _ce_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3, dim=-1), labels_l3)  # 计算交叉熵损失
+            _ce_loss_l1 = 0
+            _ce_loss_l2 = 0
+            _ce_loss_l3 = 0
+            for i in range(images.size(0)):  # 遍历每个样本
+                label_l1 = labels_l1[i].item()
+                label_l2 = labels_l2[i].item()
+                label_l3 = labels_l3[i].item()
+                pared_l1 = torch.argmax(F.softmax(cls_l1[i], dim=-1), dim=-1).item()
+                pared_l2 = torch.argmax(F.softmax(cls_l2[i], dim=-1), dim=-1).item()
+                tmp_loss_l1 = nn.NLLLoss()(F.log_softmax(cls_l1[i].unsqueeze(0), dim=-1), torch.tensor([label_l1]))
+                if pared_l1 == label_l1:  # 判断l1是否是正确的
+                    tmp_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2[i].unsqueeze(0), dim=-1), torch.tensor([label_l2]))
+                else:
+                    tmp_loss_l2 = tmp_loss_l1  # 超出范围时沿用_ce_loss_l1
+                if pared_l2 == label_l2:  # 判断是否超出范围
+                    tmp_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3[i].unsqueeze(0), dim=-1), torch.tensor([label_l3]))
+                else:
+                    tmp_loss_l3 = tmp_loss_l2  # 超出范围时沿用_ce_loss_l1
+                _ce_loss_l1 += tmp_loss_l1
+                _ce_loss_l2 += tmp_loss_l2
+                _ce_loss_l3 += tmp_loss_l3
+            _ce_loss_l1 = _ce_loss_l1 / images.size(0)
+            _ce_loss_l2 = _ce_loss_l2 / images.size(0)
+            _ce_loss_l3 = _ce_loss_l3 / images.size(0)
             _loss = (loss_l1_weight * _ce_loss_l1) + (loss_l2_weight * _ce_loss_l2) + (
                     loss_l3_weight * _ce_loss_l3)
 
