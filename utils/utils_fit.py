@@ -93,7 +93,7 @@ def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step
                     tmp_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2[i].unsqueeze(0), dim=-1), torch.tensor([label_l2]).to(cls_l1.device))
                 else:
                     tmp_loss_l2 = tmp_loss_l1  # 超出范围时沿用_ce_loss_l1
-                if pared_l2 == label_l2:  # 判断是否超出范围
+                if (pared_l2 == label_l2) & (pared_l1 == label_l1):  # 判断是否超出范围
                     tmp_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3[i].unsqueeze(0), dim=-1), torch.tensor([label_l3]).to(cls_l1.device))
                 else:
                     tmp_loss_l3 = tmp_loss_l2  # 超出范围时沿用_ce_loss_l1
@@ -126,7 +126,7 @@ def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step
                                                    torch.tensor([label_l2]))
                     else:
                         tmp_loss_l2 = tmp_loss_l1  # 超出范围时沿用_ce_loss_l1
-                    if pared_l2 == label_l2:  # 判断是否超出范围
+                    if (pared_l2 == label_l2) & (pared_l1 == label_l1):  # 判断是否超出范围
                         tmp_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3[i].unsqueeze(0), dim=-1),
                                                    torch.tensor([label_l3]))
                     else:
@@ -211,7 +211,7 @@ def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step
                     tmp_loss_l2 = nn.NLLLoss()(F.log_softmax(cls_l2[i].unsqueeze(0), dim=-1), torch.tensor([label_l2]).to(cls_l1.device))
                 else:
                     tmp_loss_l2 = tmp_loss_l1  # 超出范围时沿用_ce_loss_l1
-                if pared_l2 == label_l2:  # 判断是否超出范围
+                if (pared_l2 == label_l2) & (pared_l1 == label_l1):  # 判断是否超出范围
                     tmp_loss_l3 = nn.NLLLoss()(F.log_softmax(cls_l3[i].unsqueeze(0), dim=-1), torch.tensor([label_l3]).to(cls_l1.device))
                 else:
                     tmp_loss_l3 = tmp_loss_l2  # 超出范围时沿用_ce_loss_l1
