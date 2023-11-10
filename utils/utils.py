@@ -4,7 +4,6 @@ from PIL import Image
 import math
 from functools import partial
 
-
 # -*- coding: utf-8 -*-
 # ---------------------------------------------------------#
 #   将图像转换成RGB图像，防止灰度图在预测时报错。
@@ -22,7 +21,7 @@ def cvtColor(image):
 
 #   对输入图像进行resize,并减去均值
 # ---------------------------------------------------#
-def resize_image(image, size, letterbox_image):
+def resize_image_use(image, size, letterbox_image):
     w, h = size
     new_image = image.resize((w, h), Image.BICUBIC)
     image_array = np.array(new_image, dtype=np.float32)
@@ -30,12 +29,12 @@ def resize_image(image, size, letterbox_image):
     image_array -= mean_value
     image_array = np.clip(image_array, 0, 255).astype(np.uint8)
     # 减均值
-    return Image.fromarray(image_array)
+    #return Image.fromarray(image_array)
     # 不减均值
-    # return new_image
+    return new_image
 
 
-def resize_image_back(image, size, letterbox_image):
+def resize_image(image, size, letterbox_image):
     iw, ih = image.size
     w, h = size
     if letterbox_image:
@@ -62,6 +61,25 @@ def get_num_classes(annotation_path):
     num_classes = np.max(labels) + 1
     return num_classes
 
+
+def get_num_list_fromlabel(label1_path, label2_path, label3_path):
+    list_l1 = read_list_from_file_1d(label1_path)
+    list_l2 = read_list_from_file_2d(label2_path)
+    list_l3 = read_list_from_file_3d(label3_path)
+    l1_num_classes = len(list_l1)
+    l2_num_classes = []
+    l3_num_classes = []
+    for cls1 in range(l1_num_classes):
+        l2_tmp_classes = list_l2[cls1]
+        l2_tmp_num_class = len(l2_tmp_classes)
+        l2_num_classes.append(l2_tmp_num_class)
+        l3_num_classes_tmp = []
+        for cls2 in range(l2_tmp_num_class):
+            l3_tmp_classes = list_l3[cls1][cls2]  # 获取第一级分类为cls1且第二级分类为cls2的第二级标签
+            l3_tmp_num_class = len(l3_tmp_classes)
+            l3_num_classes_tmp.append(l3_tmp_num_class)
+        l3_num_classes.append(l3_num_classes_tmp)
+    return l1_num_classes, l2_num_classes, l3_num_classes
 
 def get_num_list(annotation_path):
     """
@@ -186,3 +204,53 @@ def set_optimizer_lr(optimizer, lr_scheduler_func, epoch):
     lr = lr_scheduler_func(epoch)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
+def write_list_to_file_1d(lst, filename):
+    with open(filename, 'w', encoding='utf-8') as file:
+        for item in lst:
+            file.write(item + '\n')
+
+
+def read_list_from_file_1d(filename):
+    lst = []
+    with open(filename, 'r', encoding='utf-8') as file:
+        for line in file:
+            lst.append(line.strip())  # 使用strip()方法去除行末的换行符
+    return lst
+
+def write_list_to_file_2d(lst, filename):
+    with open(filename, 'w', encoding='utf-8') as file:
+        for sublist in lst:
+            file.write(','.join(map(str, sublist)) + '\n')  # 使用逗号分隔每个子列表的元素，并添加换行符
+
+
+def read_list_from_file_2d(filename):
+    lst = []
+    with open(filename, 'r', encoding='utf-8') as file:
+        for line in file:
+            sublist = line.strip().split(',')  # 使用逗号分隔每一行，得到子列表
+            lst.append(list(map(str, sublist)))  # 将子列表中的元素转换为整数并添加到新的列表中
+    return lst
+
+
+def write_list_to_file_3d(lst, filename):
+    with open(filename, 'w', encoding='utf-8') as file:
+        for sublist1 in lst:
+            for sublist2 in sublist1:
+                for item in sublist2:
+                    file.write(str(item) + ' ')  # 使用逗号分隔三级子列表元素
+                file.write(';')
+            file.write('\n')  # 换行分隔不同的一级子列表
+def read_list_from_file_3d(filename):
+    lst = []
+    with open(filename, 'r', encoding='utf-8') as file:
+        for line in file:
+            if len(line) > 1:
+                sublist2 = []
+                str_list = line.split(";")  # 先按分号分割字符串
+                for item in str_list:
+                    if len(item)>1:
+                        num_list = [str(n) for n in item.split()]  # 再将每个子串转化为数字列表
+                        sublist2.append(num_list)
+                lst.append(sublist2)  # 将一级子列表添加到原始列表中
+    return lst
